@@ -1,0 +1,10 @@
+<svg width="1400" height="118" viewBox="0 0 1400 118" xmlns="http://www.w3.org/2000/svg">
+<defs><linearGradient id="bg" x1="0" y1="0" x2="1400" y2="118"><stop stop-color="#071327"/><stop offset="1" stop-color="#0C3552"/></linearGradient>
+<style>.head{font:700 24px 'Segoe UI',Arial;fill:#FFF}.sub{font:400 15px 'Segoe UI',Arial;fill:#BED0E7}.btn{font:700 16px 'Segoe UI',Arial;fill:#061428}.pulse{animation:pulse 1.9s ease-in-out infinite}@keyframes pulse{0%,100%{opacity:.4}50%{opacity:1}}</style></defs>
+<rect x="1" y="1" width="1398" height="116" rx="23" fill="url(#bg)" stroke="#294A70" stroke-width="2"/>
+<circle cx="59" cy="59" r="19" fill="none" stroke="#28D8BB" class="pulse"/><circle cx="59" cy="59" r="8" fill="#28D8BB" class="pulse"/>
+<text x="98" y="49" class="head">Explore the deployed clustering application</text>
+<text x="98" y="78" class="sub">Country explorer • model controls • cluster profiles • prediction interface • downloadable outputs</text>
+<rect x="1153" y="31" width="197" height="56" rx="28" fill="#22C8FF"/>
+<text x="1200" y="66" class="btn">OPEN APP →</text>
+</svg>

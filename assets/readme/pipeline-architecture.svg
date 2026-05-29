@@ -1,0 +1,23 @@
+<svg width="1400" height="365" viewBox="0 0 1400 365" xmlns="http://www.w3.org/2000/svg">
+<defs>
+ <linearGradient id="bg" x1="0" y1="0" x2="1400" y2="365"><stop stop-color="#071326"/><stop offset="1" stop-color="#0D2A49"/></linearGradient>
+ <style>
+ .h{font:700 25px 'Segoe UI',Arial;fill:#F8FAFF}.ey{font:700 12px 'Segoe UI',Arial;letter-spacing:1.7px;fill:#90A8C8}
+ .t{font:700 16px 'Segoe UI',Arial;fill:#F8FAFF}.d{font:400 12px 'Segoe UI',Arial;fill:#C6D5EA}
+ .moving{stroke-dasharray:8 10;animation:flow 3s linear infinite}@keyframes flow{to{stroke-dashoffset:-36}}
+ </style>
+</defs>
+<rect width="1400" height="365" rx="24" fill="url(#bg)" stroke="#294A70"/>
+<text x="50" y="48" class="h">End-to-End Analytical Pipeline</text>
+<text x="50" y="73" class="ey">RAW GLOBAL INDICATORS → DEPLOYED CLUSTER INTELLIGENCE</text>
+<g stroke="#22C8FF" stroke-width="2" class="moving">
+<path d="M208 214H253"/><path d="M414 214H459"/><path d="M620 214H665"/><path d="M826 214H871"/><path d="M1032 214H1077"/><path d="M1238 214H1270"/>
+</g>
+<g transform="translate(48 137)"><rect width="160" height="146" rx="17" fill="#112846" stroke="#22C8FF"/><circle cx="29" cy="31" r="15" fill="#22C8FF"/><text x="24" y="37" class="t">1</text><text x="20" y="72" class="t">Raw Data</text><text x="20" y="101" class="d">2,704 rows</text><text x="20" y="122" class="d">25 columns</text></g>
+<g transform="translate(253 137)"><rect width="161" height="146" rx="17" fill="#112846" stroke="#26D9BA"/><circle cx="29" cy="31" r="15" fill="#26D9BA"/><text x="24" y="37" class="t">2</text><text x="20" y="72" class="t">Clean</text><text x="20" y="101" class="d">Numeric parsing</text><text x="20" y="122" class="d">Imputation</text></g>
+<g transform="translate(459 137)"><rect width="161" height="146" rx="17" fill="#112846" stroke="#22C8FF"/><circle cx="29" cy="31" r="15" fill="#22C8FF"/><text x="24" y="37" class="t">3</text><text x="20" y="72" class="t">Engineer</text><text x="20" y="101" class="d">7 new signals</text><text x="20" y="122" class="d">30 features</text></g>
+<g transform="translate(665 137)"><rect width="161" height="146" rx="17" fill="#112846" stroke="#FFC846"/><circle cx="29" cy="31" r="15" fill="#FFC846"/><text x="24" y="37" class="t">4</text><text x="20" y="72" class="t">Scale + PCA</text><text x="20" y="101" class="d">StandardScaler</text><text x="20" y="122" class="d">58.1% in 2D</text></g>
+<g transform="translate(871 137)"><rect width="161" height="146" rx="17" fill="#112846" stroke="#AC8CFF"/><circle cx="29" cy="31" r="15" fill="#AC8CFF"/><text x="24" y="37" class="t">5</text><text x="20" y="72" class="t">Model</text><text x="20" y="101" class="d">4 algorithms</text><text x="20" y="122" class="d">3 metrics</text></g>
+<g transform="translate(1077 137)"><rect width="161" height="146" rx="17" fill="#112846" stroke="#26D9BA"/><circle cx="29" cy="31" r="15" fill="#26D9BA"/><text x="24" y="37" class="t">6</text><text x="20" y="72" class="t">Explain</text><text x="20" y="101" class="d">Profiles</text><text x="20" y="122" class="d">Findings</text></g>
+<g transform="translate(1270 157)"><rect width="91" height="105" rx="17" fill="#112846" stroke="#22C8FF"/><text x="23" y="46" class="t">App</text><text x="18" y="71" class="d">Deploy</text></g>
+</svg>
