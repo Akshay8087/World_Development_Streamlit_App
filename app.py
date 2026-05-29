@@ -215,7 +215,7 @@ def load_pipeline(path: str = "clustering_pipeline.pkl"):
 
 
 @st.cache_data(show_spinner=False)
-def build_app_data(_pipe: dict, selected_k_override: int) -> dict:
+def build_app_data(_pipe: dict) -> dict:
     """
     Reconstruct all data the app needs from the pipeline.
     Pipeline keys guaranteed: imputer, scaler, pca_2d, pca_3d, kmeans, gmm,
@@ -350,10 +350,8 @@ if missing_keys:
     st.stop()
 
 # ── Build app data ─────────────────────────────────────────────────────────────
-k_override = manual_k if k_mode == "Manual" else pipe["optimal_k"]
-
 with st.spinner("Building dashboard data…"):
-    data = build_app_data(pipe, k_override)
+    data = build_app_data(pipe)
 
 df_fe       = data["df_fe"]
 X_scaled    = data["X_scaled"]
@@ -361,23 +359,47 @@ X_pca2      = data["X_pca2"]
 X_pca3      = data["X_pca3"]
 k_metrics   = data["k_metrics"]
 auto_k      = data["auto_k"]
-eval_df     = data["eval_df"]
 feat        = data["feat"]
 pca_var     = data["pca_var"]
 n           = data["n"]
 
-selected_k  = auto_k if k_mode == "Auto (Silhouette)" else manual_k
-selected_k  = max(2, min(selected_k, n - 1))
+selected_k = auto_k if k_mode == "Auto (Silhouette)" else manual_k
+selected_k = max(2, min(int(selected_k), n - 1))
 
-label_map = {
-    "K-Means":      data["km_labels"],
-    "Agglomerative":data["agg_labels"],
-    "GMM":          data["gmm_labels"],
-    "DBSCAN":       data["db_labels"],
+# ── Dynamic model fitting ─────────────────────────────────────────────────────
+# Important fix:
+# The previous app only changed the displayed K number. It continued using the
+# labels saved inside the PKL model, so changing Manual K never changed colours,
+# profiles, maps, evaluation, or downloads.
+#
+# Here K-Means, Agglomerative and GMM are re-fitted every time selected_k changes.
+# DBSCAN is density-based and does not use K, so its stored fitted labels remain.
+dynamic_models = {
+    "K-Means": KMeans(n_clusters=selected_k, random_state=42, n_init=20),
+    "Agglomerative": AgglomerativeClustering(n_clusters=selected_k),
+    "GMM": GaussianMixture(n_components=selected_k, random_state=42, n_init=5),
 }
-primary_labels = label_map[model_choice]
 
+dynamic_labels = {
+    "K-Means": dynamic_models["K-Means"].fit_predict(X_scaled),
+    "Agglomerative": dynamic_models["Agglomerative"].fit_predict(X_scaled),
+    "GMM": dynamic_models["GMM"].fit_predict(X_scaled),
+    "DBSCAN": np.asarray(data["db_labels"]),
+}
+
+# Evaluation table now refreshes with current Manual/Auto K.
+eval_df = pd.DataFrame([
+    safe_evaluate("K-Means", dynamic_labels["K-Means"], X_scaled),
+    safe_evaluate("Agglomerative", dynamic_labels["Agglomerative"], X_scaled),
+    safe_evaluate("GMM", dynamic_labels["GMM"], X_scaled),
+    safe_evaluate("DBSCAN", dynamic_labels["DBSCAN"], X_scaled),
+])
+
+primary_labels = dynamic_labels[model_choice]
 cluster_col = f"{model_choice}_Cluster"
+
+if model_choice == "DBSCAN":
+    st.sidebar.info("ℹ️ DBSCAN does not use K. Change Primary model to K-Means, Agglomerative or GMM to see Manual K updates.")
 
 # ── Build df_clustered ────────────────────────────────────────────────────────
 df_clustered = df_fe.copy()
@@ -405,7 +427,7 @@ n_noise = int((np.asarray(primary_labels) == -1).sum())
 st.markdown(f"""
 <div class="hero">
   <span class="hero-badge">🌍 Unsupervised ML</span>
-  <span class="hero-badge">📊 K = {selected_k}</span>
+  <span class="hero-badge">📊 {"K = " + str(selected_k) if model_choice != "DBSCAN" else "K = N/A · DBSCAN"}</span>
   <span class="hero-badge">🤖 {model_choice}</span>
   <div class="hero-title">World Development Clustering</div>
   <div class="hero-sub">
@@ -420,7 +442,7 @@ c1,c2,c3,c4,c5,c6 = st.columns(6)
 for col, label, val, sub in [
     (c1,"Countries",    str(n),              "in pipeline"),
     (c2,"Features",     str(len(feat)),       "engineered"),
-    (c3,"Clusters (K)", str(selected_k),      k_mode),
+    (c3,"Active Clusters", str(n_clusters),   model_choice),
     (c4,"Auto Best K",  str(auto_k),          "by silhouette"),
     (c5,"PCA Variance", f"{pca_var:.1f}%",    "2 components"),
     (c6,"Noise",        str(n_noise),         "DBSCAN only"),
@@ -568,12 +590,29 @@ with t_cluster:
     with cl2:
         st.markdown("**Model Evaluation**")
         ev_show = eval_df.copy()
-        st.dataframe(ev_show.style
-                     .background_gradient(subset=["Silhouette"], cmap="Greens")
-                     .background_gradient(subset=["Davies-Bouldin"], cmap="RdYlGn_r")
-                     .format({"Silhouette":":.4f","Davies-Bouldin":":.4f",
-                               "Calinski-Harabasz":":.1f"}),
-                     use_container_width=True, hide_index=True)
+        # Premium styled table. Pandas Styler gradients require matplotlib on Streamlit Cloud.
+        # The fallback keeps the app running even when an optional styling dependency is missing.
+        eval_formats = {
+            "Silhouette": "{:.4f}",
+            "Davies-Bouldin": "{:.4f}",
+            "Calinski-Harabasz": "{:.1f}",
+        }
+        try:
+            styled_eval = (
+                ev_show.style
+                .background_gradient(subset=["Silhouette"], cmap="Greens")
+                .background_gradient(subset=["Davies-Bouldin"], cmap="RdYlGn_r")
+                .format(eval_formats, na_rep="—")
+            )
+            st.dataframe(styled_eval, use_container_width=True, hide_index=True)
+        except ImportError:
+            # Safe deployment fallback if matplotlib is not installed/loaded.
+            display_eval = ev_show.copy()
+            for col, fmt in eval_formats.items():
+                display_eval[col] = display_eval[col].map(
+                    lambda x: "—" if pd.isna(x) else fmt.format(x)
+                )
+            st.dataframe(display_eval, use_container_width=True, hide_index=True)
 
         fig_ev = px.bar(eval_df.melt(id_vars="Model",
                                       value_vars=["Silhouette","Davies-Bouldin"]),
@@ -745,7 +784,7 @@ with t_country:
 with t_predict:
     st.markdown('<div class="section-head">What-If Cluster Predictor</div>', unsafe_allow_html=True)
     st.markdown('<div class="section-sub">Pick a template country, adjust indicators, see the predicted cluster.</div>', unsafe_allow_html=True)
-    st.markdown('<div class="info-box">💡 Uses the stored <b>K-Means</b> model for prediction.</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="info-box">💡 Uses the active <b>K-Means</b> model with <b>K = {selected_k}</b> for prediction.</div>', unsafe_allow_html=True)
 
     tmpl = st.selectbox("Template country", sorted(df_fe.index.tolist()), key="pred_tmpl")
     base_row = df_fe.loc[[tmpl], feat].copy()
@@ -781,7 +820,7 @@ with t_predict:
 
     sc       = pipe["scaler"]
     p2_model = pipe["pca_2d"]
-    km_model = pipe["kmeans"]
+    km_model = dynamic_models["K-Means"]  # respects current selected_k
 
     try:
         c_scaled = sc.transform(custom_fin)
@@ -864,7 +903,7 @@ with t_download:
 # ── Footer ────────────────────────────────────────────────────────────────────
 st.markdown("""
 <div class="footer">
-  🌍 World Development Clustering Dashboard v2 &nbsp;·&nbsp;
+  🌍 World Development Clustering Dashboard v4 &nbsp;·&nbsp;
   Built with Streamlit · Plotly · Scikit-learn · Pandas
 </div>
 """, unsafe_allow_html=True)
