@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="assets/readme/hero-banner.svg" alt="World Development Clustering — animated project banner" width="100%"/>
+<img src="assets/readme/hero-banner.svg" alt="World Development Clustering — animated project banner" width="100%"/> 
 
 <br/>
 
